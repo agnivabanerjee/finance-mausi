@@ -88,10 +88,12 @@ class FinanceAgent:
             # Get response from agent
             response = await self.agent.ainvoke({"messages": message})
 
-            # Update conversation memory
-            self.memory.save_context({"input": message}, {"output": response})
+            ai_message = response["messages"][-1].content
 
-            return response
+            # Update conversation memory
+            self.memory.save_context({"input": str(message)}, {"output": ai_message})
+
+            return ai_message
         except Exception as e:
             return f"Error processing your request: {str(e)}"
 
