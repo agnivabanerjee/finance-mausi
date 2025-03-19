@@ -7,7 +7,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
-from langchain_anthropic import ChatAnthropic
+from langchain_google_vertexai import ChatVertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 
@@ -15,7 +15,13 @@ from langchain.chains import ConversationChain
 load_dotenv()
 
 # Initialize the model
-model = ChatAnthropic(model="claude-3-sonnet-20240229")
+model = ChatVertexAI(
+    model_name="claude-3-sonnet-v2@20241022",
+    project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+    location=os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1"),
+    max_output_tokens=32000,
+    temperature=0.7,
+)
 
 class FinanceAgent:
     def __init__(self):
