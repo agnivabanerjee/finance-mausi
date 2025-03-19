@@ -1,9 +1,17 @@
 import os
-
+import asyncio
+import nest_asyncio
 import httpx
+import logging
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Apply nest_asyncio at the module level
+nest_asyncio.apply()
 
 load_dotenv()
 
@@ -12,6 +20,8 @@ mcp = FastMCP("FinanceData")
 API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 API_BASE_URL = "https://www.alphavantage.co/query"
 
+# Create a global httpx client
+http_client = httpx.AsyncClient()
 
 @mcp.tool()
 async def fetch_intraday(
@@ -36,25 +46,34 @@ async def fetch_intraday(
 
     :returns: The intraday stock data.
     """
+    logger.debug(f"fetch_intraday called with symbol={symbol}, interval={interval}")
 
     https_params = {
         "function": "TIME_SERIES_INTRADAY",
         "symbol": symbol,
         "interval": interval,
         "datatype": datatype,
-        "adjusted": adjusted,
+        "adjusted": "true" if adjusted else "false",
         "outputsize": outputsize,
-        "extended_hours": extended_hours,
+        "extended_hours": "true" if extended_hours else "false",
         "month": month,
         "apikey": API_KEY,
     }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(API_BASE_URL, params=https_params)
+    try:
+        logger.debug(f"Making API request with params: {https_params}")
+        response = await http_client.get(API_BASE_URL, params=https_params)
+        logger.debug(f"API response status: {response.status_code}")
         response.raise_for_status()
-        return response.text if datatype == "csv" else response.json()
+        result = response.text if datatype == "csv" else response.json()
+        logger.debug(f"API request successful, returning data type: {type(result)}")
+        return result
+    except Exception as e:
+        logger.error(f"Error in fetch_intraday: {str(e)}")
+        raise
 
 
+@mcp.tool()
 async def fetch_time_series_daily(
     symbol: str, datatype: str = "json", outputsize: str = "compact"
 ) -> dict[str, str] | str:
@@ -66,6 +85,7 @@ async def fetch_time_series_daily(
 
     :returns: The daily stock data.
     """
+    logger.debug(f"fetch_time_series_daily called with symbol={symbol}")
 
     https_params = {
         "function": "TIME_SERIES_DAILY",
@@ -74,11 +94,27 @@ async def fetch_time_series_daily(
         "outputsize": outputsize,
         "apikey": API_KEY,
     }
-    async with httpx.AsyncClient() as client:
-        response = await client.get(API_BASE_URL, params=https_params)
+    
+    try:
+        logger.debug(f"Making API request with params: {https_params}")
+        response = await http_client.get(API_BASE_URL, params=https_params)
+        logger.debug(f"API response status: {response.status_code}")
         response.raise_for_status()
-        return response.text if datatype == "csv" else response.json()
+        result = response.text if datatype == "csv" else response.json()
+        logger.debug(f"API request successful, returning data type: {type(result)}")
+        return result
+    except Exception as e:
+        logger.error(f"Error in fetch_time_series_daily: {str(e)}")
+        raise
+
+
+async def cleanup():
+    await http_client.aclose()
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    logger.info("Starting Finance Server...")
+    try:
+        mcp.run(transport="stdio")
+    finally:
+        asyncio.run(cleanup())
