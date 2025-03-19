@@ -20,9 +20,6 @@ mcp = FastMCP("FinanceData")
 API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 API_BASE_URL = "https://www.alphavantage.co/query"
 
-# Create a global httpx client
-http_client = httpx.AsyncClient()
-
 @mcp.tool()
 async def fetch_intraday(
     symbol: str,
@@ -62,12 +59,14 @@ async def fetch_intraday(
 
     try:
         logger.debug(f"Making API request with params: {https_params}")
-        response = await http_client.get(API_BASE_URL, params=https_params)
-        logger.debug(f"API response status: {response.status_code}")
-        response.raise_for_status()
-        result = response.text if datatype == "csv" else response.json()
-        logger.debug(f"API request successful, returning data type: {type(result)}")
-        return result
+        # Create a new client for each request
+        async with httpx.AsyncClient() as client:
+            response = await client.get(API_BASE_URL, params=https_params, timeout=30.0)
+            logger.debug(f"API response status: {response.status_code}")
+            response.raise_for_status()
+            result = response.text if datatype == "csv" else response.json()
+            logger.debug(f"API request successful, returning data type: {type(result)}")
+            return result
     except Exception as e:
         logger.error(f"Error in fetch_intraday: {str(e)}")
         raise
@@ -97,24 +96,19 @@ async def fetch_time_series_daily(
     
     try:
         logger.debug(f"Making API request with params: {https_params}")
-        response = await http_client.get(API_BASE_URL, params=https_params)
-        logger.debug(f"API response status: {response.status_code}")
-        response.raise_for_status()
-        result = response.text if datatype == "csv" else response.json()
-        logger.debug(f"API request successful, returning data type: {type(result)}")
-        return result
+        # Create a new client for each request
+        async with httpx.AsyncClient() as client:
+            response = await client.get(API_BASE_URL, params=https_params, timeout=30.0)
+            logger.debug(f"API response status: {response.status_code}")
+            response.raise_for_status()
+            result = response.text if datatype == "csv" else response.json()
+            logger.debug(f"API request successful, returning data type: {type(result)}")
+            return result
     except Exception as e:
         logger.error(f"Error in fetch_time_series_daily: {str(e)}")
         raise
 
 
-async def cleanup():
-    await http_client.aclose()
-
-
 if __name__ == "__main__":
     logger.info("Starting Finance Server...")
-    try:
-        mcp.run(transport="stdio")
-    finally:
-        asyncio.run(cleanup())
+    mcp.run(transport="stdio")
