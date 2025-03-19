@@ -1,12 +1,9 @@
-import os
-import asyncio
 import gradio as gr
 import logging
-from typing import List, Dict, Any
+from typing import List
 from dotenv import load_dotenv
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-from langchain_mcp_adapters.tools import load_mcp_tools
+from contextlib import asynccontextmanager
+from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 from langchain_anthropic import ChatAnthropic
 from langchain.memory import ConversationBufferMemory
@@ -29,62 +26,88 @@ model = ChatAnthropic(
     max_retries=2,
 )
 
+@asynccontextmanager
+async def create_mcp_agent():
+    """Create an MCP agent with all available tools."""
+    logger.info("Creating MCP agent...")
+    async with MultiServerMCPClient() as mcp_client:
+        # Connect to finance server
+        logger.debug("Connecting to finance server...")
+        await mcp_client.connect_to_server_via_stdio(
+            "finance",
+            command="python",
+            args=["servers/finance_server.py"]
+        )
+        
+        # Get all tools
+        mcp_tools = mcp_client.get_tools()
+        logger.debug(f"Loaded tools: {mcp_tools}")
+        
+        # Create the agent
+        agent = create_react_agent(model, mcp_tools)
+        logger.info("Agent created successfully")
+        
+        try:
+            yield agent
+        finally:
+            logger.info("Cleaning up MCP agent...")
+
 
 class FinanceAgent:
     def __init__(self):
         self.agent = None
         self.memory = ConversationBufferMemory()
         self.conversation = None
-        self.all_tools = []
+        self.mcp_client = None
         logger.info("FinanceAgent initialized")
 
-    async def initialize_servers(self):
-        logger.info("Initializing MCP servers...")
-        # Create server parameters for each MCP server
-        web_server_params = StdioServerParameters(
-            command="python",
-            args=["servers/web_server.py"],
-        )
+    async def initialize_agent(self):
+        """Initialize the MCP client and agent if not already initialized."""
+        if self.agent is None:
+            logger.info("Initializing MCP client and agent...")
+            self.mcp_client = MultiServerMCPClient()
+            await self.mcp_client.__aenter__()
+            
+            try:
+                # Connect to finance server
+                logger.debug("Connecting to finance server...")
+                await self.mcp_client.connect_to_server_via_stdio(
+                    "finance",
+                    command="python",
+                    args=["servers/finance_server.py"]
+                )
+                
+                # Get all tools
+                mcp_tools = self.mcp_client.get_tools()
+                logger.debug(f"Loaded tools: {mcp_tools}")
+                
+                # Create the agent
+                self.agent = create_react_agent(model, mcp_tools)
+                self.conversation = ConversationChain(
+                    llm=model, memory=self.memory, verbose=True
+                )
+                logger.info("Agent created successfully")
+            except Exception as e:
+                # Clean up if initialization fails
+                if self.mcp_client:
+                    await self.mcp_client.__aexit__(None, None, None)
+                    self.mcp_client = None
+                raise e
 
-        finance_server_params = StdioServerParameters(
-            command="python",
-            args=["servers/finance_server.py"],
-        )
-
-        aws_server_params = StdioServerParameters(
-            command="python",
-            args=["servers/aws_server.py"],
-        )
-
-        try:
-            # Connect to finance server
-            logger.debug("Connecting to finance server...")
-            async with stdio_client(finance_server_params) as (
-                finance_read,
-                finance_write,
-            ):
-                async with ClientSession(finance_read, finance_write) as finance_session:
-                    await finance_session.initialize()
-                    finance_tools = await load_mcp_tools(finance_session)
-                    logger.debug(f"Loaded finance tools: {[tool.name for tool in finance_tools]}")
-                    self.all_tools.extend(finance_tools)
-        except Exception as e:
-            logger.error(f"Error initializing servers: {str(e)}")
-            raise
-        # Create the agent with tools and memory
-        logger.info(f"Creating agent with {len(self.all_tools)} tools")
-        self.agent = create_react_agent(model, self.all_tools)
-        self.conversation = ConversationChain(
-            llm=model, memory=self.memory, verbose=True
-        )
-        logger.info("Agent creation complete")
+    async def cleanup(self):
+        """Cleanup MCP client resources."""
+        if self.mcp_client:
+            logger.info("Cleaning up MCP client...")
+            await self.mcp_client.__aexit__(None, None, None)
+            self.mcp_client = None
+            self.agent = None
 
     async def process_message(self, message: str, history: List[List[str]]) -> str:
-        if self.agent is None:
-            logger.info("First message received, initializing servers...")
-            await self.initialize_servers()
-
         try:
+            if self.agent is None:
+                logger.info("First message received, initializing agent...")
+                await self.initialize_agent()
+            
             logger.debug(f"Processing message: {message}")
             # Get response from agent
             logger.debug("Invoking agent...")
@@ -101,6 +124,8 @@ class FinanceAgent:
             return ai_message
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}")
+            # Try to cleanup on error
+            await self.cleanup()
             return f"Error processing your request: {str(e)}"
 
 
