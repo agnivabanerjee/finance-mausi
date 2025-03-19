@@ -4,6 +4,7 @@ import json
 
 mcp = FastMCP("WebAccess")
 
+
 @mcp.tool()
 async def search_web(query: str) -> str:
     """Search the web for information"""
@@ -14,6 +15,7 @@ async def search_web(query: str) -> str:
             result = await response.text()
             return json.loads(result)
 
+
 @mcp.tool()
 async def fetch_webpage(url: str) -> str:
     """Fetch and return the contents of a webpage"""
@@ -21,5 +23,6 @@ async def fetch_webpage(url: str) -> str:
         async with session.get(url) as response:
             return await response.text()
 
+
 if __name__ == "__main__":
-    mcp.run(transport="stdio") 
+    mcp.run(transport="stdio")

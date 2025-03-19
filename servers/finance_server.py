@@ -1,89 +1,84 @@
+import os
+
+import httpx
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
-import yfinance as yf
-from typing import List, Dict, Any
-from datetime import datetime, timedelta
+
+
+load_dotenv()
 
 mcp = FastMCP("FinanceData")
 
-@mcp.tool()
-async def get_stock_price(symbol: str) -> Dict[str, Any]:
-    """Get the current stock price and basic info for a given symbol"""
-    try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
-        return {
-            "price": info.get("regularMarketPrice", 0.0),
-            "currency": info.get("currency", "USD"),
-            "exchange": info.get("exchange", ""),
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        return {"error": str(e)}
+API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+API_BASE_URL = "https://www.alphavantage.co/query"
+
 
 @mcp.tool()
-async def get_historical_data(symbol: str, days: int = 7) -> List[Dict[str, Any]]:
-    """Get historical stock data for a given symbol and number of days"""
-    try:
-        ticker = yf.Ticker(symbol)
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
-        
-        df = ticker.history(start=start_date, end=end_date)
-        
-        return [{
-            "date": index.strftime("%Y-%m-%d"),
-            "open": row["Open"],
-            "high": row["High"],
-            "low": row["Low"],
-            "close": row["Close"],
-            "volume": row["Volume"]
-        } for index, row in df.iterrows()]
-    except Exception as e:
-        return [{"error": str(e)}]
+async def fetch_intraday(
+    symbol: str,
+    interval: str = "60min",
+    datatype: str = "json",
+    adjusted: bool = True,
+    extended_hours: bool = True,
+    outputsize: str = "compact",
+    month: str = None,
+) -> dict[str, str] | str:
+    """
+    Fetch intraday stock data from the Alpha Vantage API.
 
-@mcp.tool()
-async def get_company_info(symbol: str) -> Dict[str, Any]:
-    """Get detailed company information for a given stock symbol"""
-    try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
-        return {
-            "name": info.get("longName", ""),
-            "sector": info.get("sector", ""),
-            "industry": info.get("industry", ""),
-            "market_cap": info.get("marketCap", 0),
-            "pe_ratio": info.get("trailingPE", 0),
-            "dividend_yield": info.get("dividendYield", 0),
-            "description": info.get("longBusinessSummary", ""),
-            "website": info.get("website", ""),
-            "country": info.get("country", "")
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    :argument: symbol (str): The stock symbol to fetch.
+    :argument: interval (str): The time interval for the data (default: "5min").
+    :argument: datatype (str): The response data type (default: "json").
+    :argument: adjusted (bool): The adjusted data flag (default: True).
+    :argument: extended_hours (bool): The extended hours flag (default: True).
+    :argument: outputsize (str): The output size for the data (default: "compact").
+    :argument: month (str): The month of the data (default: None).
 
-@mcp.tool()
-async def get_market_news(symbol: str = "") -> List[Dict[str, Any]]:
-    """Get latest market news, optionally filtered by symbol"""
-    try:
-        if symbol:
-            ticker = yf.Ticker(symbol)
-            news = ticker.news
-        else:
-            # Get news for major indices as a fallback
-            indices = ["^GSPC", "^DJI", "^IXIC"]  # S&P 500, Dow Jones, NASDAQ
-            news = []
-            for idx in indices:
-                ticker = yf.Ticker(idx)
-                news.extend(ticker.news[:3])  # Get top 3 news from each index
-                
-        return [{
-            "title": item.get("title", ""),
-            "publisher": item.get("publisher", ""),
-            "link": item.get("link", ""),
-            "published": datetime.fromtimestamp(item.get("providerPublishTime", 0)).isoformat()
-        } for item in news[:10]]  # Return top 10 news items
-    except Exception as e:
-        return [{"error": str(e)}]
+    :returns: The intraday stock data.
+    """
+
+    https_params = {
+        "function": "TIME_SERIES_INTRADAY",
+        "symbol": symbol,
+        "interval": interval,
+        "datatype": datatype,
+        "adjusted": adjusted,
+        "outputsize": outputsize,
+        "extended_hours": extended_hours,
+        "month": month,
+        "apikey": API_KEY,
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(API_BASE_URL, params=https_params)
+        response.raise_for_status()
+        return response.text if datatype == "csv" else response.json()
+
+
+async def fetch_time_series_daily(
+    symbol: str, datatype: str = "json", outputsize: str = "compact"
+) -> dict[str, str] | str:
+    """
+    Fetch daily stock data from the Alpha Vantage API.
+
+    :argument: symbol (str): The stock symbol to fetch.
+    :argument: datatype (str): The response data type (default: "json").
+
+    :returns: The daily stock data.
+    """
+
+    https_params = {
+        "function": "TIME_SERIES_DAILY",
+        "symbol": symbol,
+        "datatype": datatype,
+        "outputsize": outputsize,
+        "apikey": API_KEY,
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.get(API_BASE_URL, params=https_params)
+        response.raise_for_status()
+        return response.text if datatype == "csv" else response.json()
+
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio") 
+    mcp.run(transport="stdio")

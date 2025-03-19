@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 
 mcp = FastMCP("AWSKnowledge")
 
+
 @mcp.tool()
 async def dummy_tool(query: str) -> List[Dict[str, str]]:
     """Search AWS documentation for relevant information"""
@@ -11,11 +12,10 @@ async def dummy_tool(query: str) -> List[Dict[str, str]]:
         {
             "title": "Example AWS Service",
             "description": "Description of the service",
-            "url": "https://docs.aws.amazon.com/example"
+            "url": "https://docs.aws.amazon.com/example",
         }
     ]
 
 
-
 if __name__ == "__main__":
-    mcp.run(transport="stdio") 
+    mcp.run(transport="stdio")
