@@ -1,3 +1,20 @@
+"""
+Finance Server Module
+
+This module implements an MCP server that provides financial data tools using the AlphaVantage API.
+It offers tools for fetching intraday and daily stock price data.
+
+The module uses FastMCP to expose the following tools:
+- fetch_intraday: Get intraday stock price data
+- fetch_time_series_daily: Get daily stock price data
+
+Environment Variables:
+    ALPHAVANTAGE_API_KEY: API key for accessing AlphaVantage services
+
+Author: Your Name
+License: MIT
+"""
+
 import os
 import asyncio
 import nest_asyncio
@@ -20,6 +37,7 @@ mcp = FastMCP("FinanceData")
 API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 API_BASE_URL = "https://www.alphavantage.co/query"
 
+
 @mcp.tool()
 async def fetch_intraday(
     symbol: str,
@@ -33,15 +51,26 @@ async def fetch_intraday(
     """
     Fetch intraday stock data from the Alpha Vantage API.
 
-    :argument: symbol (str): The stock symbol to fetch.
-    :argument: interval (str): The time interval for the data (default: "5min").
-    :argument: datatype (str): The response data type (default: "json").
-    :argument: adjusted (bool): The adjusted data flag (default: True).
-    :argument: extended_hours (bool): The extended hours flag (default: True).
-    :argument: outputsize (str): The output size for the data (default: "compact").
-    :argument: month (str): The month of the data (default: None).
+    This function retrieves intraday stock price data with configurable parameters
+    for time interval, data format, and other options.
 
-    :returns: The intraday stock data.
+    Args:
+        symbol (str): The stock symbol to fetch (e.g., 'AAPL', 'GOOGL')
+        interval (str, optional): Time interval between data points. Defaults to "60min".
+            Valid values: '1min', '5min', '15min', '30min', '60min'
+        datatype (str, optional): Response format. Defaults to "json".
+            Valid values: 'json', 'csv'
+        adjusted (bool, optional): Whether to return adjusted data. Defaults to True.
+        extended_hours (bool, optional): Include extended hours data. Defaults to True.
+        outputsize (str, optional): Amount of data to return. Defaults to "compact".
+            Valid values: 'compact', 'full'
+        month (str, optional): Specific month to fetch (YYYY-MM format). Defaults to None.
+
+    Returns:
+        Union[dict[str, str], str]: Stock data in either JSON or CSV format
+
+    Raises:
+        Exception: If the API request fails or returns an error
     """
     logger.debug(f"fetch_intraday called with symbol={symbol}, interval={interval}")
 
@@ -79,10 +108,21 @@ async def fetch_time_series_daily(
     """
     Fetch daily stock data from the Alpha Vantage API.
 
-    :argument: symbol (str): The stock symbol to fetch.
-    :argument: datatype (str): The response data type (default: "json").
+    This function retrieves daily stock price data with options for
+    data format and amount of historical data.
 
-    :returns: The daily stock data.
+    Args:
+        symbol (str): The stock symbol to fetch (e.g., 'AAPL', 'GOOGL')
+        datatype (str, optional): Response format. Defaults to "json".
+            Valid values: 'json', 'csv'
+        outputsize (str, optional): Amount of data to return. Defaults to "compact".
+            Valid values: 'compact' (latest 100 data points), 'full' (all data points)
+
+    Returns:
+        Union[dict[str, str], str]: Stock data in either JSON or CSV format
+
+    Raises:
+        Exception: If the API request fails or returns an error
     """
     logger.debug(f"fetch_time_series_daily called with symbol={symbol}")
 

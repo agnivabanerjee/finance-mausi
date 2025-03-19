@@ -1,27 +1,17 @@
-# Finance Mausi
+# Finance Mausi 🤖
 
-An intelligent agent built with LangChain and Anthropic models that uses Model Context Protocol (MCP) tools to access:
-- Web resources
-- Financial market data
-- AWS knowledge base
+An intelligent financial assistant powered by Anthropic's Claude and AlphaVantage, built with LangChain and Model Context Protocol (MCP).
 
-## Features
+## ✨ Features
 
-- 🤖 Intelligent agent powered by Anthropic's Claude 3 Sonnet
-- 🛠️ MCP tools integration for accessing various data sources
-- 🌐 Web access capabilities
-- 📊 Real-time financial data using yfinance
-- ☁️ AWS knowledge base access with Kendra integration
+- 🤖 Powered by Anthropic's Claude 3.5 Sonnet
+- 📊 Real-time stock market data via AlphaVantage API
+- 🔄 Intraday and daily stock price tracking
+- 🛠️ MCP tools for seamless API integration
 - 💬 User-friendly Gradio chat interface
+- 🐳 Docker containerization for easy deployment
 
-## Prerequisites
-
-- Docker and Docker Compose
-- Google Cloud Platform account with Vertex AI API enabled
-- AWS account (optional, for AWS features)
-- Python 3.11+
-
-## Setup
+## 🚀 Quick Start
 
 1. Clone the repository:
 ```bash
@@ -30,54 +20,54 @@ cd finance-mausi
 ```
 
 2. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Fill in the required values:
-     ```
-     # Required
-     GOOGLE_CLOUD_PROJECT=your-project-id
-     GOOGLE_CLOUD_LOCATION=us-central1 (or your preferred region)
-     
-     # Optional (for AWS features)
-     AWS_ACCESS_KEY_ID=your-aws-access-key
-     AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-     AWS_DEFAULT_REGION=us-east-1
-     ```
+```bash
+cp .env.example .env
+```
 
-3. Set up Google Cloud credentials:
-   - Create a service account in Google Cloud Console
-   - Download the service account key
-   - Save it as `credentials/google-credentials.json`
-   - Ensure the service account has access to Vertex AI API
+3. Configure your `.env` file with required API keys:
+```env
+# Required
+ANTHROPIC_API_KEY=your-anthropic-api-key
+ALPHAVANTAGE_API_KEY=your-alphavantage-api-key
+
+# Optional (for AWS features)
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_DEFAULT_REGION=us-east-1
+```
 
 4. Build and run with Docker:
 ```bash
 docker compose up --build
 ```
 
-## Environment Variables
+5. Access the interface at `http://localhost:7860`
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| GOOGLE_CLOUD_PROJECT | Your Google Cloud Project ID | Yes | - |
-| GOOGLE_CLOUD_LOCATION | Google Cloud region | Yes | us-central1 |
-| GOOGLE_APPLICATION_CREDENTIALS | Path to service account key | Yes | ./credentials/google-credentials.json |
-| AWS_ACCESS_KEY_ID | AWS Access Key | No | - |
-| AWS_SECRET_ACCESS_KEY | AWS Secret Key | No | - |
-| AWS_DEFAULT_REGION | AWS Region | No | us-east-1 |
-| DEBUG | Enable debug mode | No | false |
-| LOG_LEVEL | Logging level | No | INFO |
+## 🔑 Environment Variables
 
-## Architecture
+| Variable | Description | Required |
+|----------|-------------|----------|
+| ANTHROPIC_API_KEY | Your Anthropic API key | Yes |
+| ALPHAVANTAGE_API_KEY | Your AlphaVantage API key | Yes |
+| AWS_ACCESS_KEY_ID | AWS Access Key | No |
+| AWS_SECRET_ACCESS_KEY | AWS Secret Key | No |
+| AWS_DEFAULT_REGION | AWS Region | No |
+| DEBUG | Enable debug mode | No |
+| LOG_LEVEL | Logging level | No |
+
+## 🏗️ Architecture
 
 The application is built using:
 - LangChain for agent orchestration
-- Google Vertex AI (Claude 3 Sonnet) for natural language processing
+- Anthropic's Claude 3.5 Sonnet for natural language processing
+- AlphaVantage for financial data
+- Model Context Protocol (MCP) for tool integration
 - Gradio for the web interface
 - Docker for containerization
 
-## Development
+## 💻 Development
 
-To run the application in development mode:
+To run the application locally without Docker:
 
 1. Create a virtual environment:
 ```bash
@@ -95,21 +85,41 @@ pip install -r requirements.txt
 python agent.py
 ```
 
-## Security Notes
+## 🔒 Security Notes
 
-- Never commit the `.env` file or `google-credentials.json` to version control
-- Keep your API keys and credentials secure
+- Never commit the `.env` file to version control
+- Keep your API keys secure
 - Use environment variables for sensitive information
 - The `.gitignore` file is configured to exclude sensitive files
 
-## Available Commands
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## License
+## 📝 License
 
-[Your chosen license] 
+MIT License
+
+Copyright (c) 2024 Finance Mausi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. 
