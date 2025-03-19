@@ -102,7 +102,7 @@ python agent.py
 - Use environment variables for sensitive information
 - The `.gitignore` file is configured to exclude sensitive files
 
-## Contributing
+## Available Commands
 
 1. Fork the repository
 2. Create a feature branch

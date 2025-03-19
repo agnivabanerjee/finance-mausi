@@ -7,7 +7,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
-from langchain_google_vertexai import ChatVertexAI
+from langchain_anthropic import ChatAnthropic
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 
@@ -15,12 +15,12 @@ from langchain.chains import ConversationChain
 load_dotenv()
 
 # Initialize the model
-model = ChatVertexAI(
-    model_name="claude-3-sonnet-v2@20241022",
-    project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-    location=os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1"),
-    max_output_tokens=32000,
-    temperature=0.7,
+model = ChatAnthropic(
+    model="claude-3-5-sonnet-20240620",
+    temperature=0,
+    max_tokens=8192,
+    timeout=None,
+    max_retries=2,
 )
 
 
@@ -49,30 +49,30 @@ class FinanceAgent:
         )
 
         # Connect to web server
-        async with stdio_client(web_server_params) as (web_read, web_write):
-            async with ClientSession(web_read, web_write) as web_session:
-                await web_session.initialize()
-                web_tools = await load_mcp_tools(web_session)
-                self.all_tools.extend(web_tools)
+        # async with stdio_client(web_server_params) as (web_read, web_write):
+        #     async with ClientSession(web_read, web_write) as web_session:
+        #         await web_session.initialize()
+        #         web_tools = await load_mcp_tools(web_session)
+        #         self.all_tools.extend(web_tools)
 
-            # Connect to finance server
-            async with stdio_client(finance_server_params) as (
-                finance_read,
-                finance_write,
-            ):
-                async with ClientSession(
-                    finance_read, finance_write
-                ) as finance_session:
-                    await finance_session.initialize()
-                    finance_tools = await load_mcp_tools(finance_session)
-                    self.all_tools.extend(finance_tools)
+        # Connect to finance server
+        async with stdio_client(finance_server_params) as (
+            finance_read,
+            finance_write,
+        ):
+            async with ClientSession(
+                finance_read, finance_write
+            ) as finance_session:
+                await finance_session.initialize()
+                finance_tools = await load_mcp_tools(finance_session)
+                self.all_tools.extend(finance_tools)
 
-                # Connect to AWS server
-                async with stdio_client(aws_server_params) as (aws_read, aws_write):
-                    async with ClientSession(aws_read, aws_write) as aws_session:
-                        await aws_session.initialize()
-                        aws_tools = await load_mcp_tools(aws_session)
-                        self.all_tools.extend(aws_tools)
+        # # Connect to AWS server
+        # async with stdio_client(aws_server_params) as (aws_read, aws_write):
+        #     async with ClientSession(aws_read, aws_write) as aws_session:
+        #         await aws_session.initialize()
+        #         aws_tools = await load_mcp_tools(aws_session)
+        #         self.all_tools.extend(aws_tools)
 
         # Create the agent with tools and memory
         self.agent = create_react_agent(model, self.all_tools)

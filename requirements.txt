@@ -3,7 +3,6 @@ langchain-core>=0.1.27
 langchain-community>=0.0.24
 langchain-mcp-adapters>=0.0.5
 langgraph>=0.0.10
-langchain-openai>=0.0.2
 langchain-anthropic>=0.1.1
 anthropic>=0.8.0
 python-dotenv>=1.0.0
@@ -16,4 +15,3 @@ yfinance>=0.2.36
 pandas>=2.2.0
 numpy>=1.26.0
 pydantic>=2.6.1
-langchain-google-vertexai==2.0.15
