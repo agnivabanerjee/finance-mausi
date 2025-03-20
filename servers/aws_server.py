@@ -1,5 +1,9 @@
+# Standard library imports
+from typing import Dict
+
+# Third-party imports
 from mcp.server.fastmcp import FastMCP
-from typing import Dict, List, Any
+from typing import List, Any
 
 mcp = FastMCP("AWSKnowledge")
 

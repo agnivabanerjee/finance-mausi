@@ -1,6 +1,9 @@
-from mcp.server.fastmcp import FastMCP
-import aiohttp
+# Standard library imports
 import json
+
+# Third-party imports
+import aiohttp
+from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("WebAccess")
 
