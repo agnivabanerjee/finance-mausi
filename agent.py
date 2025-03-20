@@ -14,16 +14,19 @@ Author: Your Name
 License: MIT
 """
 
-import gradio as gr
+# Standard library imports
 import logging
-from typing import List
-from dotenv import load_dotenv
 from contextlib import asynccontextmanager
+from typing import List
+
+# Third-party imports
+import gradio as gr
+from dotenv import load_dotenv
+from langchain.memory import ConversationBufferMemory
+from langchain_anthropic import ChatAnthropic
+from langchain.chains import ConversationChain
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
-from langchain_anthropic import ChatAnthropic
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -47,17 +50,17 @@ model = ChatAnthropic(
 async def create_mcp_agent():
     """
     Creates an MCP agent with all available tools using async context management.
-    
+
     This function:
     1. Creates a MultiServerMCPClient
     2. Connects to the finance server
     3. Loads available tools
     4. Creates a react agent with the tools
     5. Manages cleanup on exit
-    
+
     Yields:
         Agent: A configured LangChain agent with MCP tools
-    
+
     Raises:
         Exception: If there's an error during initialization or cleanup
     """
@@ -86,13 +89,13 @@ async def create_mcp_agent():
 class FinanceAgent:
     """
     Main agent class that handles user interactions and manages MCP connections.
-    
+
     This class:
     - Maintains the chat interface state
     - Manages MCP client connections
     - Processes user messages
     - Handles conversation memory
-    
+
     Attributes:
         agent: The LangChain agent instance
         memory: ConversationBufferMemory for chat history
@@ -111,13 +114,13 @@ class FinanceAgent:
     async def initialize_agent(self):
         """
         Initialize the MCP client and agent if not already initialized.
-        
+
         This method:
         1. Creates a new MCP client
         2. Connects to the finance server
         3. Loads tools and creates the agent
         4. Sets up conversation chain
-        
+
         Raises:
             Exception: If initialization fails
         """
@@ -153,7 +156,7 @@ class FinanceAgent:
     async def cleanup(self):
         """
         Cleanup MCP client resources and reset agent state.
-        
+
         This method ensures proper cleanup of resources when:
         - The agent encounters an error
         - The application is shutting down
@@ -168,14 +171,14 @@ class FinanceAgent:
     async def process_message(self, message: str, history: List[List[str]]) -> str:
         """
         Process a user message and return the agent's response.
-        
+
         Args:
             message: The user's input message
             history: List of previous message pairs [user_message, assistant_message]
-        
+
         Returns:
             str: The agent's response message
-        
+
         Raises:
             Exception: If message processing fails
         """
@@ -208,7 +211,7 @@ class FinanceAgent:
 def create_gradio_interface():
     """
     Create and configure the Gradio chat interface.
-    
+
     Returns:
         gr.ChatInterface: Configured Gradio chat interface
     """

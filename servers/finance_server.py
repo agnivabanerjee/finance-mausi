@@ -15,11 +15,13 @@ Author: Your Name
 License: MIT
 """
 
-import os
-import asyncio
-import nest_asyncio
-import httpx
+# Standard library imports
 import logging
+import os
+
+# Third-party imports
+import httpx
+import nest_asyncio
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
@@ -133,7 +135,7 @@ async def fetch_time_series_daily(
         "outputsize": outputsize,
         "apikey": API_KEY,
     }
-    
+
     try:
         logger.debug(f"Making API request with params: {https_params}")
         # Create a new client for each request
